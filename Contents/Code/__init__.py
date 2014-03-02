@@ -44,11 +44,12 @@ def Videos(title, id):
     videos = JSON.ObjectFromURL(url)
                         
     for video in videos['videos']:
+        thumb_url = IMG_URL % (str(video["id"]), str(video["thumbnail_version"]), str(video["id"]))
         oc.add(
             CreateVideoClipObject(
                 url = video["cdn_asset_url"],
                 title = video["title"],
-                thumb = IMG_URL % (str(video["id"]), str(video["thumbnail_version"]), str(video["id"])),
+                thumb = Resource.ContentsOfURLWithFallback(url = thumb_url, fallback = ICON),
                 summary = video["description"],
                 duration = int(video["duration"])
             )
@@ -95,4 +96,3 @@ def CreateVideoClipObject(url, title, thumb, summary, duration, include_containe
         return ObjectContainer(objects = [vco])
     else:
         return vco
-
