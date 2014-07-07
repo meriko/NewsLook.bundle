@@ -2,9 +2,9 @@ TITLE               = 'NewsLook'
 PREFIX              = '/video/newslook'
 ART                 = 'art-default.jpg'
 ICON                = 'icon-default.png'
-API_CATEGORIES_URL  = 'http://iptv.newslook.com/api/v2/categories.json'
-API_VIDEO_URL       = 'http://iptv.newslook.com/api/v2/categories/%s.json'
-IMG_URL             = 'http://img.newslook.com/images/dyn/videos/%s/%s/pad/516/291/%s.jpg'
+
+BROKEN_TITLE   = "This channel is no longer available"
+BROKEN_MESSAGE = "The Newslook web site no longer contains any videos"
 
 ###################################################################################################
 def Start():
@@ -17,82 +17,26 @@ def Start():
 @handler(PREFIX, TITLE, thumb = ICON, art = ART)
 def MainMenu():
     oc = ObjectContainer()
-
-    categories = JSON.ObjectFromURL(API_CATEGORIES_URL)
-
-    for category in categories['categories']:
-        oc.add(
-            DirectoryObject(
-                key = 
-                    Callback(
-                        Videos, 
-                        title = category['name'], 
-                        id = category['permalink']
-                    ),
-                title = category['name']
-            )
-        ) 
     
-    return oc
-
-####################################################################################################
-@route(PREFIX + '/Videos')
-def Videos(title, id):
-    oc = ObjectContainer(title2 = title)
-    
-    url    = API_VIDEO_URL % id
-    videos = JSON.ObjectFromURL(url)
-                        
-    for video in videos['videos']:
-        thumb_url = IMG_URL % (str(video["id"]), str(video["thumbnail_version"]), str(video["id"]))
-        oc.add(
-            CreateVideoClipObject(
-                url = video["cdn_asset_url"],
-                title = video["title"],
-                thumb = Resource.ContentsOfURLWithFallback(url = thumb_url, fallback = ICON),
-                summary = video["description"],
-                duration = int(video["duration"])
-            )
-        )   
-        
-    return oc
-####################################################################################################
-@route(PREFIX + '/CreateVideoClipObject', duration = int, include_container = bool) 
-def CreateVideoClipObject(url, title, thumb, summary, duration, include_container = False):
-    vco = VideoClipObject(
-            key = 
+    oc.add(
+        DirectoryObject(
+            key =
                 Callback(
-                    CreateVideoClipObject,
-                    url = url,
-                    title = title,
-                    thumb = thumb,
-                    summary = summary,
-                    duration = duration,
-                    include_container = True
+                    Broken
                 ),
-            rating_key = title,
-            title = title,
-            thumb = thumb,
-            summary = summary,
-            duration = duration,
-            items = [
-                MediaObject(
-                    container = Container.MP4,
-                    video_codec = VideoCodec.H264,
-                    audio_codec = AudioCodec.AAC,
-                    video_resolution = 360,
-                    audio_channels = 2,
-                    parts = [
-                        PartObject(
-                            key = url
-                        )
-                    ],
-                    optimized_for_streaming = True
-                )
-            ]
+            title   = BROKEN_TITLE,
+            summary = BROKEN_MESSAGE
+        )
     )
+
+    return oc
     
-    if include_container:
-        return ObjectContainer(objects = [vco])
-    else:
-        return vco
+####################################################################################################
+@route(PREFIX + '/Broken')
+def Broken():
+	oc = ObjectContainer(title2 = "Broken")
+	
+	oc.header  = BROKEN_TITLE
+	oc.message = BROKEN_MESSAGE
+	
+	return oc
